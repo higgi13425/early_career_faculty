@@ -34,7 +34,7 @@ The vertical lines mark:
 - red - today - funding should extend past this line - if not, this is an **urgent** problem
 - black - 2 years from now - stable funding extends past this line
 
-Anyone whose funding runs out between the 2 lines should actively be writing and submitting grants.
+Anyone whose funding runs out between the 2 lines should actively be **writing and submitting** grants.
 ```{r data, echo=FALSE}
 support_levels <- c("Dept Startup", "AASLD CDA", "ACG CDA", "CCF CDA", "KL2", "NIH K23", "NIH K08", "NIH R01")
 
