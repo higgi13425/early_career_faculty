@@ -1,0 +1,106 @@
+---
+title: "Early Career Faculty in GI & Hepatology"
+author: "Peter Higgins, RAC Chair"
+date: "11/23/2020"
+output:
+  word_document: 
+    reference_docx: "temp.docx"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ganttrify)
+library(readxl)
+library(janitor)
+library(lubridate)
+library(glue)
+```
+
+## Tracking Junior Faculty and Their Supported Effort
+
+It can become complicated to track which faculty are in the career development phase, and what supported effort they have for research, along the the source for that support, and the timeline for when it runs out. These are important pieces of information for planning and supporting future faculty development and grant applications.
+
+In the Gantt chart below, we will track junior research faculty timelines, with support indicated in:
+
+- red, for Department Support
+- gray, for foundation CDAs
+- light blue, for internal KL2s
+- blue for NIH K awards
+- black for NIH R01s
+
+The vertical lines mark:
+
+- red - today - funding should extend past this line - if not, this is an **urgent** problem
+- black - 2 years from now - stable funding extends past this line
+
+Anyone whose funding runs out between the 2 lines should actively be writing and submitting grants.
+```{r data, echo=FALSE}
+support_levels <- c("Dept Startup", "AASLD CDA", "ACG CDA", "CCF CDA", "KL2", "NIH K23", "NIH K08", "NIH R01")
+
+faculty <- read_excel('early-career-faculty_Dec-2020.xlsx', 
+                      sheet = 'Sheet1') %>% 
+  clean_names() %>% 
+  pivot_longer(cols = start_date:end_date,
+               names_to = "state",
+               values_to = "date") %>% 
+   separate(name, c("last_name", "first_name"), sep = ",") %>% 
+  mutate(name_support = paste0(last_name, " - ", source_of_support)) %>% 
+  mutate(date = ymd(date)) %>% 
+  group_by(last_name) %>% 
+  arrange(last_name, date) %>% 
+  mutate(last_date = last(date)) %>% 
+  mutate(source_of_support = factor(source_of_support,
+        levels = support_levels)) %>% 
+  arrange(last_date, last_name, source_of_support, desc(state)) %>% 
+  ungroup() %>% 
+  mutate(order_var = 1:nrow(.))
+
+```
+
+## Gantt Plot
+
+```{r gantt, echo=FALSE, fig.width=9, fig.height=6}
+faculty %>% 
+  group_by(last_name) %>% 
+  ggplot(aes(date,  fct_reorder(name_support, desc(order_var)),
+             color = source_of_support)) +
+  geom_line(size=4) +
+  labs(x = "Year", y = NULL, 
+       title = "Junior Research Faculty Timelines",
+       subtitle = glue("Gastroenterology and Hepatology, N = {length(unique(faculty$last_name))}"),
+       color = "Source of Support") +
+  geom_vline(xintercept = Sys.Date(), 
+             color = "red") +
+  theme_minimal() +
+  scale_color_manual(values = 
+      c("red3", "gray80", "gray60", "gray30",
+        "skyblue1",  "deepskyblue3", 
+        "mediumblue", "black")) +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  geom_vline(xintercept = ymd(Sys.Date()),
+             color = "red") +
+  geom_vline(xintercept = ymd(Sys.Date()) + 730,
+             color = "black") +
+  annotate("text", label = "Today", size = 3,
+           x = ymd(Sys.Date())-150, 
+           y = nrow(faculty)/2, color = "red") +
+  annotate("text", label = "Writing Grants", 
+           x = ymd(Sys.Date()) + 365, size = 3,
+           y = nrow(faculty)/2, 
+           color = "blue") +
+  annotate("text", label = "2 years from now", 
+           x = ymd(Sys.Date()) + 1120, size = 3,
+           y = nrow(faculty)/2, color = "black") +
+  theme(plot.title = element_text(face = "bold.italic"),
+        legend.position = c(0.15, 0.7),
+        axis.text = element_text(color = "black"),
+        legend.background = element_rect(fill = "gray97",
+    color = "steelblue")) ->
+plot
+
+plot 
+
+ggsave("gantt.png", device = "png", units = "in", dpi = 300,
+       width = 9, height = 6)
+```
