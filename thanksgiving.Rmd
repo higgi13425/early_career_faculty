@@ -1,0 +1,85 @@
+---
+title: "Thanksgiving Meal"
+author: "Peter Higgins"
+date: "11/26/2020"
+output:
+  word_document: 
+    reference_docx: "temp.docx"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(lubridate)
+library(glue)
+library(here)
+```
+
+## Planning a Thanksgiving Dinner
+It can be a complicated task to plan a Thanksgiving dinner and get all of the dishes ready and on the table at the same time.
+
+A Gantt chart can help with planning.
+This starts with an excel spreadsheet for each step for each dish, with a start and stop time for each step.
+
+```{r data, echo=FALSE}
+
+dish_levels <- c("Stuffing", "Turkey", "Cranberry Sauce", "Coffee", 
+            "Mashed Potatoes", "Casserole", "Gravy", "Apple Pie")
+
+dishes <- read_excel(here::here('thanskgiving_gantt.xlsx'), 
+                      sheet = 'Sheet1') %>% 
+  clean_names() %>% 
+  pivot_longer(cols = start_time:end_time,
+               names_to = "state",
+               values_to = "time") %>% 
+  mutate(dish_step = paste0(dish, " - ", preparation_step)) %>% 
+  mutate(dish = factor(dish,
+        levels = dish_levels)) %>% 
+  group_by(dish) %>% 
+  mutate(first_time = first(time)) %>% 
+  arrange(first_time, dish, time) %>% 
+  ungroup() %>% 
+  mutate(order_var = 1:nrow(.))
+
+```
+
+## Gantt Plot
+
+```{r gantt, echo=FALSE, fig.width=9, fig.height=6}
+dishes %>% 
+  group_by(dish) %>% 
+  ggplot(aes(time,  fct_reorder(dish_step, desc(order_var)),
+             color = dish)) +
+  geom_line(size = 12) +
+  labs(x = "Time", y = NULL, 
+       title = "Thanksgiving Dinner",
+       subtitle = "Dish Planning For the Big Day",
+       color = "Dish") +
+  theme_minimal() +
+  scale_x_datetime(date_breaks = "1 hours", 
+                   date_labels = "%Y-%m-%d\n%H:%M") +
+  scale_color_manual(values = 
+      c("lightgoldenrod2", "darkgoldenrod2",  "#a43149", "#605148", 
+        "cornsilk2", "darkolivegreen3", "#86644f", "gold2")) +
+  geom_vline(xintercept = ymd_hm("2020-11-26 17:40"),
+             color = "red") +
+  geom_vline(xintercept = ymd_hm("2020-11-26 18:40"),
+             color = "black") +
+  annotate("text", label = "Dinner Served", size = 4,
+           x = ymd_hm("2020-11-26 17:20"), 
+           y = nrow(dishes)/2, color = "red") +
+  annotate("text", label = "Dessert Served", 
+           x = ymd_hm("2020-11-26 19:01"),, size = 4,
+           y = nrow(dishes)/2, color = "black") +
+  theme(plot.title = element_text(face = "bold.italic", size = 22),
+        plot.subtitle = element_text(size = 16),
+        legend.position = c(0.2, 0.4),
+        axis.text = element_text(color = "black", size = 12),
+        legend.background = element_rect(fill = "gray97",
+    color = "steelblue"))
+
+ggsave("turkey.png", device = "png", units = "in", dpi = 320,
+      width = 9, height = 6)
+```

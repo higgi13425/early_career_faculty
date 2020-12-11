@@ -10,7 +10,6 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(ganttrify)
 library(readxl)
 library(janitor)
 library(lubridate)
@@ -101,6 +100,6 @@ plot
 
 plot 
 
-ggsave("gantt.png", device = "png", units = "in", dpi = 300,
+ggsave("gantt.png", device = "png", units = "in", dpi = 320,
        width = 9, height = 6)
 ```
