@@ -34,13 +34,10 @@ dishes <- read_excel(here::here('thanskgiving_gantt.xlsx'),
   pivot_longer(cols = start_time:end_time,
                names_to = "state",
                values_to = "time") %>% 
+    mutate(dish = factor(dish, levels = dish_levels)) %>% 
   mutate(dish_step = paste0(dish, " - ", preparation_step)) %>% 
-  mutate(dish = factor(dish,
-        levels = dish_levels)) %>% 
-  group_by(dish) %>% 
   mutate(first_time = first(time)) %>% 
   arrange(first_time, dish, time) %>% 
-  ungroup() %>% 
   mutate(order_var = 1:nrow(.))
 
 ```
@@ -49,7 +46,6 @@ dishes <- read_excel(here::here('thanskgiving_gantt.xlsx'),
 
 ```{r gantt, echo=FALSE, fig.width=9, fig.height=6}
 dishes %>% 
-  group_by(dish) %>% 
   ggplot(aes(time,  fct_reorder(dish_step, desc(order_var)),
              color = dish)) +
   geom_line(size = 12) +
@@ -75,10 +71,10 @@ dishes %>%
            y = nrow(dishes)/2, color = "black") +
   theme(plot.title = element_text(face = "bold.italic", size = 22),
         plot.subtitle = element_text(size = 16),
-        legend.position = c(0.2, 0.4),
         axis.text = element_text(color = "black", size = 12),
+        legend.position = c(0.2, 0.4),
         legend.background = element_rect(fill = "gray97",
-    color = "steelblue"))
+        color = "steelblue"))
 
 ggsave("turkey.png", device = "png", units = "in", dpi = 320,
       width = 9, height = 6)
