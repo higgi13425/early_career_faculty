@@ -14,6 +14,8 @@ library(readxl)
 library(janitor)
 library(lubridate)
 library(glue)
+library(ggalt)
+library(ragg)
 ```
 
 ## Tracking Junior Faculty and Their Supported Effort
@@ -34,16 +36,15 @@ The vertical lines mark:
 - black - 2 years from now - stable funding extends past this line
 
 Anyone whose funding runs out between the 2 lines should actively be **writing and submitting** grants.
-```{r data, echo=FALSE}
-support_levels <- c("Dept Startup", "AASLD CDA", "ACG CDA", "CCF CDA", "KL2", "NIH K23", "NIH K08", "NIH R01")
+```{r data, echo=FALSE, warning=FALSE}
+support_levels <- c("Dept Startup", "AASLD CDA", "ACG CDA", "CCF CDA", "NIH KL2", "NIH K23", "NIH K08",  "VA IIR", "NIH U01")
 
-faculty <- read_excel('early-career-faculty_Dec-2020.xlsx', 
-                      sheet = 'Sheet1') %>% 
+faculty <- read_excel('data/Early Career Fac Jun2021.xlsx',  sheet = 'Sheet1') %>% 
   clean_names() %>% 
   pivot_longer(cols = start_date:end_date,
                names_to = "state",
                values_to = "date") %>% 
-   separate(name, c("last_name", "first_name"), sep = ",") %>% 
+  separate(name, c("last_name", "first_name"), sep = ",") %>% 
   mutate(name_support = paste0(last_name, " - ", source_of_support)) %>% 
   mutate(date = ymd(date)) %>% 
   group_by(last_name) %>% 
@@ -57,16 +58,17 @@ faculty <- read_excel('early-career-faculty_Dec-2020.xlsx',
 
 ```
 
-## Gantt Plot
+## Current Funding
 
-```{r gantt, echo=FALSE, fig.width=9, fig.height=6}
+```{r gantt, echo=FALSE, fig.width=9, warning=FALSE, fig.height=6}
+
 faculty %>% 
   group_by(last_name) %>% 
   ggplot(aes(date,  fct_reorder(name_support, desc(order_var)),
              color = source_of_support)) +
   geom_line(size=4) +
   labs(x = "Year", y = NULL, 
-       title = "Junior Research Faculty Timelines",
+       title = "Junior Research Faculty Funding Timelines",
        subtitle = glue("Gastroenterology and Hepatology, N = {length(unique(faculty$last_name))}"),
        color = "Source of Support") +
   geom_vline(xintercept = Sys.Date(), 
@@ -75,24 +77,24 @@ faculty %>%
   scale_color_manual(values = 
       c("red3", "gray80", "gray60", "gray30",
         "skyblue1",  "deepskyblue3", 
-        "mediumblue", "black")) +
+        "mediumblue", "black", "purple")) +
   scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
   geom_vline(xintercept = ymd(Sys.Date()),
              color = "red") +
   geom_vline(xintercept = ymd(Sys.Date()) + 730,
              color = "black") +
   annotate("text", label = "Today", size = 3,
-           x = ymd(Sys.Date())-150, 
+           x = ymd(Sys.Date())-145, 
            y = nrow(faculty)/2, color = "red") +
-  annotate("text", label = "Writing Grants", 
+  annotate("text", label = "Write/Submit Grants", 
            x = ymd(Sys.Date()) + 365, size = 3,
-           y = nrow(faculty)/2, 
+           y = nrow(faculty)/2-0.5, 
            color = "blue") +
   annotate("text", label = "2 years from now", 
-           x = ymd(Sys.Date()) + 1120, size = 3,
+           x = ymd(Sys.Date()) + 1060, size = 3,
            y = nrow(faculty)/2, color = "black") +
   theme(plot.title = element_text(face = "bold.italic"),
-        legend.position = c(0.15, 0.7),
+        legend.position = c(0.86, 0.71),
         axis.text = element_text(color = "black"),
         legend.background = element_rect(fill = "gray97",
     color = "steelblue")) ->
@@ -100,6 +102,61 @@ plot
 
 plot 
 
-ggsave("gantt.png", device = "png", units = "in", dpi = 320,
-       width = 9, height = 6)
+ggsave("gantt.png", device = "png", 
+       units = "in", dpi = 320,
+       width = 18, height = 9)
+```
+
+## Planned Grant Proposals
+
+```{r proposals, echo=FALSE, warning = FALSE, fig.width=9, fig.height=6}
+
+proposals <- read_excel('data/RAC_Info Update Jun2021.xlsx') %>% 
+  clean_names() %>% 
+  select(name, primary_mentor, current_title:date_of_funding) %>% 
+  separate(name, c("first_name", "last_name"), sep = " ") %>% 
+  mutate(name_grant = paste0(last_name, " - ", grant_proposal)) %>% 
+  mutate(date_asst_prof = ymd(date_asst_prof)) %>% 
+  mutate(date_of_submission = ymd(date_of_submission)) %>% 
+  mutate(date_of_funding = ymd(date_of_funding)) %>% 
+  group_by(last_name) %>% 
+  arrange(last_name, date_of_funding) %>% 
+  mutate(first_funding = first(date_of_funding)) %>% 
+  arrange(last_name, first_funding, date_of_funding) %>% 
+  ungroup() %>% 
+  mutate(order_var = 1:nrow(.)) %>% 
+  mutate(date_of_funding = date_of_submission + 550)
+
+proposals %>% 
+  group_by(last_name) %>% 
+  arrange(last_name, date_of_funding) %>% 
+  ggplot(aes(y = fct_reorder(name_grant, desc(order_var)),
+             x=date_of_submission, xend=date_of_funding)) +
+  geom_dumbbell(size=1.5, color="#b2b2b2", 
+                size_x=3, size_xend = 3, colour_x = "deepskyblue3", colour_xend = "forestgreen") +
+  annotate("text", label = "Submit date", size = 3,
+           x = ymd(Sys.Date()) - 520, 
+           y = nrow(proposals) - 0.5, color = "deepskyblue3") +
+  annotate("text", label = "Funding date", size = 3,
+           x = ymd(Sys.Date()) + 280, 
+           y = nrow(proposals) - 0.5, color = "forestgreen") +
+  geom_vline(xintercept = ymd(Sys.Date()),
+             color = "red") +
+  annotate("text", label = "Today", size = 3,
+           x = ymd(Sys.Date()) - 30, 
+           y = nrow(proposals) - 0.5, color = "red") +
+  geom_text(aes(y = fct_reorder(name_grant, desc(order_var)),
+             label = primary_mentor, x = Sys.Date() + 1440), size = 2.2) +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  labs(x = "Year", y = NULL, 
+       title = "Junior Faculty Research Grant Application Timelines",
+       subtitle = glue("Gastroenterology and Hepatology, N = {length(unique(proposals$last_name))}                                                                   Primary Mentor")) +
+  theme(plot.title = element_text(face = "bold.italic"),
+        legend.position = c(0.80, 0.7),
+        axis.text = element_text(color = "black"))
+
+ggsave("proposals.png", device = "png", units = "in", dpi = 320,
+       width = 18, height = 9)
+# use 9 x 7 for printouts
 ```
