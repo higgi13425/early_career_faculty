@@ -37,9 +37,9 @@ The vertical lines mark:
 
 Anyone whose funding runs out between the 2 lines should actively be **writing and submitting** grants.
 ```{r data, echo=FALSE, warning=FALSE}
-support_levels <- c("Dept Startup", "AASLD CDA", "ACG CDA", "CCF CDA", "NIH KL2", "NIH K23", "NIH K08",  "VA IIR", "NIH U01")
+support_levels <- c("Dept Startup", "AASLD CDA", "ACG CDA", "CCF CDA", "NIH KL2", "NIH K23", "NIH K08",  "VA CDA", "VA Other", "NIH U01")
 
-faculty <- read_excel('data/Early Career Fac Jun2021.xlsx',  sheet = 'Sheet1') %>% 
+faculty <- read_excel('data/Early Career Fac May2022.xlsx',  sheet = 'Sheet1') %>% 
   clean_names() %>% 
   pivot_longer(cols = start_date:end_date,
                names_to = "state",
@@ -73,26 +73,38 @@ faculty %>%
        color = "Source of Support") +
   geom_vline(xintercept = Sys.Date(), 
              color = "red") +
-  theme_minimal() +
   scale_color_manual(values = 
       c("red3", "gray80", "gray60", "gray30",
         "skyblue1",  "deepskyblue3", 
-        "mediumblue", "black", "purple")) +
+        "mediumblue", "darkorchid1", "darkorchid3")) +
   scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
   geom_vline(xintercept = ymd(Sys.Date()),
              color = "red") +
   geom_vline(xintercept = ymd(Sys.Date()) + 730,
              color = "black") +
   annotate("text", label = "Today", size = 3,
-           x = ymd(Sys.Date())-145, 
-           y = nrow(faculty)/2, color = "red") +
+           x = ymd(Sys.Date())-105, 
+           y = nrow(faculty)/2-2, color = "red") +
   annotate("text", label = "Write/Submit Grants", 
            x = ymd(Sys.Date()) + 365, size = 3,
-           y = nrow(faculty)/2-0.5, 
+           y = nrow(faculty)/2-2, 
            color = "blue") +
   annotate("text", label = "2 years from now", 
-           x = ymd(Sys.Date()) + 1060, size = 3,
-           y = nrow(faculty)/2, color = "black") +
+           x = ymd(Sys.Date()) + 950, size = 3,
+           y = nrow(faculty)/2-2, color = "black") +
+  geom_rect(xmin = ymd(Sys.Date())+ 1480, 
+            xmax = ymd(Sys.Date())+ 2130, , 
+            ymin = 15, ymax = 22, 
+            color = "blue", fill = "white") +
+  annotate("text", label = "4 Faculty Transitioned \nto Independent Funding", size = 4,
+           x = ymd(Sys.Date())+ 1805, 
+           y = nrow(faculty)/2-18.5, color = "black") +
+  annotate("text", label = "Parikh\nStidham\nTapper\nAdams", size = 3.5,
+           x = ymd(Sys.Date())+ 1805, 
+           y = nrow(faculty)/2-22, color = "black") +
+    theme_minimal() +
+  theme(panel.background = element_rect(fill = "grey97", colour = NA),
+    plot.background = element_rect(fill = "grey97", colour = NA )) +
   theme(plot.title = element_text(face = "bold.italic"),
         legend.position = c(0.86, 0.71),
         axis.text = element_text(color = "black"),
