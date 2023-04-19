@@ -92,16 +92,24 @@ faculty %>%
   annotate("text", label = "2 years from now", 
            x = ymd(Sys.Date()) + 1110, size = 3,
            y = nrow(faculty)/2, color = "black") +
-  geom_rect(xmin = ymd(Sys.Date())+ 1380, 
-            xmax = ymd(Sys.Date())+ 1830, , 
-            ymin = 19, ymax = 23.5, 
+  geom_rect(xmin = ymd(Sys.Date())+ 1330, 
+            xmax = ymd(Sys.Date())+ 1680, 
+            ymin = 18.8, ymax = 23.2, 
             color = "blue", fill = "white") +
   annotate("text", label = "5 Faculty Transitioned \nto Independent Funding", size = 3.5,
            x = ymd(Sys.Date())+ 1505, 
-           y = nrow(faculty)/2-18, color = "black") +
+           y = nrow(faculty)/2-18.6, color = "black") +
   annotate("text", label = "Parikh\nStidham\nTapper\nAdams\nMellinger", size = 3,
-           x = ymd(Sys.Date())+ 1605, 
+           x = ymd(Sys.Date())+ 1505, 
            y = nrow(faculty)/2-22, color = "black") +
+  geom_rect(xmin = ymd(Sys.Date())-3055, 
+            xmax = ymd(Sys.Date())- 1950,  
+            ymin = 12.8, ymax = 16, 
+            color = "blue", fill = "white")+
+  annotate("text", label = "Big class of 2015\nKL2 = at risk for funding gap\n8-12 years from start to R01", size = 3.5,
+           x = ymd(Sys.Date())- 2505, 
+           y = nrow(faculty)/2-28.6, 
+           color = "black") +
     theme_minimal() +
   theme(panel.background = element_rect(fill = "grey97", colour = NA),
     plot.background = element_rect(fill = "grey97", colour = NA )) +
@@ -172,3 +180,26 @@ ggsave("proposals.png", device = "png", units = "in", dpi = 320,
        width = 18, height = 9)
 # use 9 x 7 for printouts
 ```
+
+# include data on "graduates"
+# see what data look like when add back graduates
+# keep data on failures also (any research hires since 2010 who have gone clinical or left?)
+# alternate view - sort by year of hire
+
+
+# what is average time from hire to external K? (SD, range)
+# what is average time from hire to indep funding? (SD, range)
+# how frequent are funding gaps?
+# how long are avg funding gaps?
+# if there is a gap btwn foundation CDA and K, does remaining startup fill it in?
+# when does startup commitment expire? R01? ever? used as future bridge funding between R01s?
+# Does 2 year KL2 predict funding gaps?
+# what are the predictors of indep funding? year of hire? CDA? K? 
+# what are predictors of funding gaps?
+# plan for 2+ R01s to maintain research time
+
+# what does pipeline look like at other places - how many Ks from NIDDK?
+# what is success rate of K app? K to R01 transition?
+
+# plan on future DDW talk?
+# RAC started 2018?
