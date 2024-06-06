@@ -18,7 +18,8 @@ library(ggalt)
 library(ragg)
 ```
 
-## Tracking Junior Faculty and Their Supported Effort
+## Tracking Junior Faculty and Their Supported 
+Effort
 
 It can become complicated to track which faculty are in the career development phase, and what supported effort they have for research, along the the source for that support, and the timeline for when it runs out. These are important pieces of information for planning and supporting future faculty development and grant applications.
 
@@ -37,9 +38,11 @@ The vertical lines mark:
 
 Anyone whose funding runs out between the 2 lines should actively be **writing and submitting** grants.
 ```{r data, echo=FALSE, warning=FALSE}
+# define support source
 support_levels <- c("Dept Startup", "AASLD CDA", "ACG CDA", "CCF CDA", "NIH KL2", "NIH K23", "NIH K08",  "VA CDA", "VA Other", "NIH U01")
 
-faculty <- read_excel('data/Early Career Fac Apr2023.xlsx',  sheet = 'Sheet1') %>% 
+# read in data, pivot to long format, separate name, sort by last date, add order variable, One row for each date.
+faculty <- read_excel('data/Early Career Fac Apr2024.xlsx',  sheet = 'Sheet1') %>% 
   clean_names() %>% 
   pivot_longer(cols = start_date:end_date,
                names_to = "state",
@@ -58,9 +61,12 @@ faculty <- read_excel('data/Early Career Fac Apr2023.xlsx',  sheet = 'Sheet1') %
 
 ```
 
-## Current Funding
+## Current Funding Plot
 
 ```{r gantt, echo=FALSE, fig.width=9, warning=FALSE, fig.height=6}
+
+# sort by name, date, apply colors.
+# add legend, annotations
 
 faculty %>% 
   group_by(last_name) %>% 
@@ -92,9 +98,9 @@ faculty %>%
   annotate("text", label = "2 years from now", 
            x = ymd(Sys.Date()) + 1110, size = 3,
            y = nrow(faculty)/2, color = "black") +
-  geom_rect(xmin = ymd(Sys.Date())+ 1330, 
-            xmax = ymd(Sys.Date())+ 1680, 
-            ymin = 18.8, ymax = 23.2, 
+  geom_rect(xmin = ymd(Sys.Date())+ 1280, # rect on right side
+            xmax = ymd(Sys.Date())+ 1720, 
+            ymin = 17.3, ymax = 22.5, 
             color = "blue", fill = "white") +
   annotate("text", label = "5 Faculty Transitioned \nto Independent Funding", size = 3.5,
            x = ymd(Sys.Date())+ 1505, 
@@ -102,13 +108,13 @@ faculty %>%
   annotate("text", label = "Parikh\nStidham\nTapper\nAdams\nMellinger", size = 3,
            x = ymd(Sys.Date())+ 1505, 
            y = nrow(faculty)/2-22, color = "black") +
-  geom_rect(xmin = ymd(Sys.Date())-3055, 
-            xmax = ymd(Sys.Date())- 1950,  
-            ymin = 12.8, ymax = 16, 
+  geom_rect(xmin = ymd(Sys.Date())- 3255, # rect at bottom left - look at png before adjust
+            xmax = ymd(Sys.Date())- 2500,  
+            ymin = 19.7, ymax = 23.5, 
             color = "blue", fill = "white")+
   annotate("text", label = "Big class of 2015\nKL2 = at risk for funding gap\n8-12 years from start to R01", size = 3.5,
-           x = ymd(Sys.Date())- 2505, 
-           y = nrow(faculty)/2-28.6, 
+           x = ymd(Sys.Date())- 2905, 
+           y = nrow(faculty)/2-20.6, 
            color = "black") +
     theme_minimal() +
   theme(panel.background = element_rect(fill = "grey97", colour = NA),
@@ -181,25 +187,165 @@ ggsave("proposals.png", device = "png", units = "in", dpi = 320,
 # use 9 x 7 for printouts
 ```
 
-# include data on "graduates"
+# include data on "graduates" from RAC
 # see what data look like when add back graduates
 # keep data on failures also (any research hires since 2010 who have gone clinical or left?)
+- Samara Rifkin departed
+- Jakob Kurlander went clinical
+- Vas Bishu going clinical
+
+- to R01 - Stidham, Tapper, Adams, Razumilava, Parikh
+
 # alternate view - sort by year of hire
 
+## Sort by year of hire 
 
+```{r gantt, echo=FALSE, fig.width=9, warning=FALSE, fig.height=6}
+
+faculty %<>% 
+  group_by(last_name) %>% 
+  mutate(hire_date = dplyr::first(date)) |> 
+  arrange(hire_date, order_var) |> 
+  ungroup() |> 
+  mutate(order_var2 = factor(1:nrow(faculty))) 
+
+faculty |> 
+  ggplot(aes(x = date, 
+           y = fct_reorder(name_support,  desc(order_var2)), 
+        color = source_of_support)) +
+  geom_line(size=4) +
+  labs(x = "Year", y = NULL, 
+       title = "Junior Research Faculty Funding Timelines",
+       subtitle = glue("Gastroenterology and Hepatology, N = {length(unique(faculty$last_name))}"),
+       color = "Source of Support") +
+  geom_vline(xintercept = Sys.Date(), 
+             color = "red") +
+  scale_color_manual(values = 
+      c("red3", "gray80", "gray60", "gray30",
+        "skyblue1",  "deepskyblue3", 
+        "mediumblue", "darkorchid1", "darkorchid3")) +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  geom_vline(xintercept = ymd(Sys.Date()),
+             color = "red") +
+  geom_vline(xintercept = ymd(Sys.Date()) + 730,
+             color = "black") +
+  annotate("text", label = "Today", size = 3,
+           x = ymd(Sys.Date())-155, 
+           y = nrow(faculty)/2, color = "red") +
+  annotate("text", label = "Write/Submit\nGrants", 
+           x = ymd(Sys.Date()) + 365, size = 3,
+           y = nrow(faculty)/2-0.5, 
+           color = "blue") +
+  annotate("text", label = "2 years from now", 
+           x = ymd(Sys.Date()) + 1110, size = 3,
+           y = nrow(faculty)/2, color = "black") +
+  geom_rect(xmin = ymd(Sys.Date())+ 1390, 
+            xmax = ymd(Sys.Date())+ 1630, 
+            ymin = 18.8, ymax = 23.2, 
+            color = "blue", fill = "white") +
+  annotate("text", label = "5 Faculty Transitioned \nto Independent Funding", size = 3.5,
+           x = ymd(Sys.Date())+ 1505, 
+           y = nrow(faculty)/2-18.6, color = "black") +
+  annotate("text", label = "Parikh\nStidham\nTapper\nAdams\nMellinger", size = 3,
+           x = ymd(Sys.Date())+ 1505, 
+           y = nrow(faculty)/2-22, color = "black") +
+  geom_rect(xmin = ymd(Sys.Date())-2855, 
+            xmax = ymd(Sys.Date())- 2150,  
+            ymin = 12.8, ymax = 16, 
+            color = "blue", fill = "white")+
+  annotate("text", label = "Big class of 2015\nKL2 = at risk for funding gap\n8-12 years from start to R01", size = 3.5,
+           x = ymd(Sys.Date())- 2505, 
+           y = nrow(faculty)/2-28.6, 
+           color = "black") +
+    theme_minimal() +
+  theme(panel.background = element_rect(fill = "grey97", colour = NA),
+    plot.background = element_rect(fill = "grey97", colour = NA )) +
+  theme(plot.title = element_text(face = "bold.italic"),
+        legend.position = c(0.93, 0.84),
+        axis.text = element_text(color = "black"),
+        legend.background = element_rect(fill = "gray97",
+    color = "steelblue")) ->
+plot
+
+plot 
+
+ggsave("gantt_by_year.png", device = "png", 
+       units = "in", dpi = 320,
+       width = 18, height = 9)
+```
 # what is average time from hire to external K? (SD, range)
+```{r}
+faculty |> 
+  mutate(k_start = case_when(str_detect(name_support, "K23") | str_detect(name_support, "K08") == TRUE ~ date, .default = NA)) |> 
+  mutate(k_start = case_when(state == "end_date" ~ NA, .default = k_start)) |> 
+  mutate(time_to_extK = k_start - hire_date) |> select(last_name, hire_date, k_start, time_to_extK) |> 
+  group_by(last_name) |> 
+  arrange(time_to_extK) |> 
+  filter(row_number() ==1) ->
+time_to_K
+
+print(time_to_K, n =Inf)
+
+median(time_to_K$time_to_extK, na.rm=TRUE)
+
+mean(time_to_K$time_to_extK, na.rm=TRUE)
+```
+
+Roughly 4.3 years, on average, to get an external K (median and mean). So with standard 2y of departmental support, that means a 2.3 year gap, or getting a foundation award ASAP.
+
 # what is average time from hire to indep funding? (SD, range)
 # how frequent are funding gaps?
 # how long are avg funding gaps?
+```{r}
+faculty |> 
+  mutate(date_diff = date - lag(date)) |>
+  select(state, date, date_diff) |>
+  filter(date_diff > 10 & state == "start_date") ->
+gaps
+
+gaps$date_diff |> 
+  mean(rm.na = TRUE)
+```
+
+6 gaps, avg 458 days, so far.
+4/5 hires in 2015 have had a funding gap of greater than 10 days. All had 3y of department support.
+
+Funding gaps are to be expected for most.
+Expect 2.3 years of gap for people with 2 years of department support.
+
+# Q for Bill
 # if there is a gap btwn foundation CDA and K, does remaining startup fill it in?
 # when does startup commitment expire? R01? ever? used as future bridge funding between R01s?
+
 # Does 2 year KL2 predict funding gaps?
+Yes, everyone 3/3 with a KL2 had a funding gap immediately following the KL2 - it is too short and deceptive.
+
 # what are the predictors of indep funding? year of hire? CDA? K? 
+3 of 4 hired 2015-2018 who had foundation CDA eventually got a K (not Kim Harer yet)
+
 # what are predictors of funding gaps?
++ KL2
++ 2y of department support
+- foundation CDA
+
 # plan for 2+ R01s to maintain research time
 
 # what does pipeline look like at other places - how many Ks from NIDDK?
 # what is success rate of K app? K to R01 transition?
+# https://www.niddk.nih.gov/research-funding/funded-grants-grant-history/niddk-extramural-funding-trends-support-guiding-principles?dkrd=/research-funding/funded-grants-grant-history/funding-trends-support-core-values
+R01 payline 16 in 2022
+18.8% of 2628 applications awarded by NIDDK (494)
+44.3% of K08s (31/70)
+46.7% of K23s (43/92) in 2022 at NIDDK
+
+# niddk https://www.niaid.nih.gov/grants-contracts/research-career-development-k-award-success-rates-future-award-prospects
+K success at NIDDK in 2005-2007
+54% for K23,
+46% for K08
+
+Of those who had K at NIAID in 2005-2007, 50% eventually got R01. 
+27% in those who applied and did not get a K
+# https://report.nih.gov/funding/nih-budget-and-spending-data-past-fiscal-years/success-rates 
 
 # plan on future DDW talk?
 # RAC started 2018?
